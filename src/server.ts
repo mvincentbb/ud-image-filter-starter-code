@@ -14,24 +14,31 @@ import {filterImageFromURL, deleteLocalFiles} from './util/util';
   app.use(bodyParser.json());
 
 
+    function validateLink(url: string) {
+        return url.match(/\.(png|jpg|gif|jpeg)$/) != null;
+    }
   // @TODO1 IMPLEMENT A RESTFUL ENDPOINT
-  app.get("/filteredimage",
-      async (req: Request, res: Response) => {
-        const { image_url } = req.query;
-        if (!image_url) {
-          res.status(400).send({ message: 'image_url is required or malformed' });
-          return;
-        }
 
-        const filteredImg: string = await filterImageFromURL(image_url);
-        res.sendFile(filteredImg, {}, error => {
-          if (error) {
-            res.status(500).send({ message: 'could not proccess file request' });
-          } else {
-            deleteLocalFiles([filteredImg]);
-          }
-        });
-      });
+    // filtered image endpoint
+    app.get("/filteredimage", async (req: Request, res: Response) => {
+        let url = req.query.image_url as string;
+        let newUrl = validateLink(url);
+
+        if (newUrl) {
+            const path: string = await filterImageFromURL(url);
+
+            res.status(200).sendFile(path, function (error) {
+                if (error) {
+                    res.status(422).send("image is not accessible");
+                } else {
+                    deleteLocalFiles([path]);
+                }
+            });
+        }
+        else {
+            res.status(404).send("url is not valid")
+        }
+    });
   /**************************************************************************** */
 
   //! END @TODO1
